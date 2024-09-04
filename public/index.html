@@ -1,0 +1,143 @@
+<HMTL>
+    <head>
+        <title>Book app</title>
+    </head>
+    <body>
+        <div>
+            <h1>Book Application</h1><br> <!-- Προσθήκη στην σελίδα ενός header -->
+            <p><b>Book entry:</b></p> <!-- Χωρίζω την σελίδα σε 2 παραγράφους, όπου κάθε παράγραφος θα περιέχει τα textboxes και τα κουμπιά κάθε μιας από τις δύο απαιτούμενες λειτουργίες -->
+            <label for="textbox_1">Type the author of the book:</label><br> <!--Προσθέτω labels, δίπλα από κάθε textbox προκειμένου να υποδηλώσω τι πρέπει να συμπληρωθεί στο κάθε textbox -->
+            <input type="text" id="textbox_1"><br> <!-- Προσθέτω τα textboxes -->
+            <label for="textbox_2">Type the title of the book:</label><br>
+            <input type="text" id="textbox_2"><br>
+            <label for="dropdown_1">Choose the genre of the book: </label><br>
+            <select id="dropdown_1"> <!-- Δημιουργώ μια λίστα, όπου κάθε option μέσα στο <select></select> αποτελεί ένα στοιχείο της λίστας -->
+                <option value="Science Fiction">Science Fiction</option>
+                <option value="Satire">Satire</option>
+                <option value="Drama">Drama</option>
+                <option value="Action and Adventure">Action and Adventure</option>
+                <option value="Romance">Romance</option>
+                <option value="Mystery">Mystery</option>
+                <option value="Horror">Horror</option>
+            </select><br>
+            <label for="textbox_3">Type the price of the book:</label><br>
+            <input type="text" id="textbox_3"><br>
+            <input type="button" id="button_1" value="Add book"><br><br>
+            <p><b>Book search:</b></p> <!-- Νέα παράγραφος όπου αφορά την λειτουργία της αναζήτησης ενός βιβλίου -->
+            <p>Type a word to the textbox below to search for a corresponding book. The system will search for a book title that corresponds to the word you will provide!</p>
+            <label for="textbox_4">Type a word: </label><br> <!-- Προσθήκη label,textbox και κουμπί για την υποστηρίξη της λειτουργίας της αναζήτησης -->
+            <input type="textbox" id="textbox_4"><br>
+            <input type="button" id="button_2" value="Search book"><br>
+        </div>
+        <div id="result"></div>
+        <script type="text/javascript">
+            class Book{
+                constructor(author,title,genre,price){
+                    this.author=author;
+                    this.title=title;
+                    this.genre=genre;
+                    this.price=price;
+                }
+            }
+            // Προσθέτω έναν eventListener σε περίπτωση που πατηθεί το κουμπί Add book για την προσθήκη στην βάση ενός βιβλίου.
+            document.getElementById('button_1').addEventListener('click',async (e)=>{
+
+                const author = document.getElementById('textbox_1').value.toLowerCase(); // Όταν πατηθεί το κουμπί παίρνω τις τιμές των textboxes που έβαλε ο χρήστης. Μετατρέπω τις τιμές σε μικρά γράμματα προκείμενου, ύστερα στο αρχείο backend.js να μπορώ να συγκρίνω
+                const title = document.getElementById('textbox_2').value.toLowerCase();  // αν υπάρχει ήδη βιβλίο στην βάση με αυτό που επιθυμεί να βάλει ο χρήστης. Π.χ αν στην βάση υπάρχει το βιβλίο Lord of the Rings με όνομα συγγραφέα J. R. R. Tolkien και ο χρήστης επιχειρήσει 
+                const genre = document.getElementById('dropdown_1').value.toLowerCase(); // να βάλει το Lord Of The Rings με τον ίδιο συγγραφέα, αυτό θα έμπαινε κανονικά καθώς τα of και the διαφέρουν με τα Of και The, μετατρέποντας όμως όλα τα γράμματα σε πεζά αποφεύγω αυτήν την σύγχυση και δεν εισάγεται ένα βιβλίο δύο φορές.
+                const price = document.getElementById('textbox_3').value;                
+                const Intregex = /^-?\d+$/;
+                const floatRegex = /^-?\d+(\.\d+)?$/;
+
+                const book = new Book(author,title,genre,price); // Δημιουργώ ένα νέο αντικείμενο book.
+                var res=0;
+                
+                if(author==='' || title==='' || price===''){ // Ελέγχω αν τα πεδία author, title και price είναι κενά, οπότε σε αυτήν την περίπτωση εμφανίζω στον χρήστη κατάλληλο μήνυμα. Δεν ελέγχω αν η τιμή genre είναι '' γιατί το genre έχει μια default επιλεγμένη τιμή, το πρώτο option της λίστας.
+                    window.alert('Please fill in the textboxes with the appropriate values. No null values are allowed!');
+                }
+                else{
+                    if((Intregex.test(price) || floatRegex.test(price)) && res===0){ // Ελέγχω αν η τιμή του βιβλίου που έβαλε ο χρήστης είναι int ή float με βάση τα int και float regex patterns παραπάνω.
+                        const url = 'http://localhost:3000/books'; // Σε περίπτωση που ο χρήστης έβαλε σωστά δεδομένα στο πεδίο του price στέλνω ένα post request με σώμα το αντικείμενο book που δημιούργησα παραπάνω.
+                            const response = await fetch(url,{
+                                method: "POST",
+                                body: JSON.stringify(book),
+                                headers: {"Content-Type" : "application/json"}
+                            });
+                            if(response.ok){ // Ελέγχω την απάντηση και αν αυτή ήταν επιτυχής ικανοποιείται αυτή η συνθήκη.
+                                const data = await response.json();
+                                if(data==0){
+                                    window.alert('Book added successfully!'); // Σε περίπτωση που η τιμή του data είναι 0 τότε δεν υπάρχει βιβλίο στην βάση με τίτλο και συγγραφέα που επιθυμεί να καταχωρήσει ο χρήστης, οπότε το βιβλίο έχει καταχωρηθεί στην βάση και εμφανίζεται κατάλληλο μήνυμα.
+                                }
+                                else if(data==1){
+                                    window.alert('Book already exists!'); // Σε περίπτωση που η τιμή του data είναι 1 τότε υπάρχει βιβλίο στην βάση με τίτλο και συγγραφέα που επιθυμεί να καταχωρήσει ο χρήστης και εμφανίζεται κατάλληλο μήνυμα.
+                                }
+                            }
+                            else{
+                                window.alert('Error adding book!'); // Εμφάνιση κατάλληλου μηνύματος σε περίπτωση αποτυχίας προσθήκης του βιβλίου.
+                            }
+                    }
+                    else{ //Αν ο χρήστης δεν έχει βάλει αριθμό στο κουτί της τιμής(price) τότε εμφανίζεται κατάλληλο μήνυμα, καθαρίζονται τα πεδία και ο χρήστης πρέπει να εισάγει πάλι τιμές.
+                        window.alert('The price textbox should be filled with a float or integer number! Textboxes will be cleared. Please fill the correct values!');
+                        document.getElementById('textbox_1').value='';
+                        document.getElementById('textbox_2').value='';
+                        document.getElementById('textbox_3').value='';
+                        document.getElementById('textbox_4').value='';
+                    }
+                }
+            });
+            // Προσθέτω έναν eventListener σε περίπτωση που πατηθεί το κουμπί Search book για την αναζήτηση στην βάση ενός βιβλίου.
+            document.getElementById('button_2').addEventListener('click',async(e)=>{ 
+                const keyword = document.getElementById('textbox_4').value; // Παίρνω την τιμή του keyword που έβαλε ο χρήστης στο αντίστοιχο textbox.
+                const url = `http://localhost:3000/books/${keyword}`;
+                try { // Στο παραπάνω url ψάχνω βιβλίο που στον τίτλο του να υπάρχει το keyword που έβαλε ο χρήστης στο αντίστοιχο πεδίο. Οπότε στέλνω ένα GET request ώστε να πάρω αποτέλεσμα.
+                    const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { "Accept": "application/json" }
+                });
+
+                if(response.ok){ // Ελέγχω την απάντηση και αν αυτή ήταν επιτυχής ικανοποιείται αυτή η συνθήκη.
+                    const data = await response.json();
+                    if(data.length==0){ // Αν το data.length είναι 0 σημαίνει ότι δεν επιστράφηκαν βιβλία που να ταίριαξαν στο keyword του χρήστη, οπότε εμφανίζεται κατάλληλο μήνυμα.
+                        alert(`The book/books that you are trying to search for do not exist!`);
+                    }
+                    else{
+                        alert('Book/books found that match the keyword. Press ok to see the results!');
+                        displayData(data); // Καλώ την συνάρτηση displayData για να προβάλλω το βιβλίο/βιβλία που ταιριάξαν στην αναζήτηση με το keyword στον τίτλο του βιβλίου.
+                    }
+                }else{
+                    throw new Error('Error!'); // Αν η απάντηση δεν ήταν επιτυχής τότε εμφανίζεται μήνυμα λάθους.
+                }
+                }catch(error){
+                    console.error('Error:', error.message);
+                }
+            });
+            function displayData(data) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = ''; // Καθαρίζω τα υπάρχοντα δεδομένα(βιβλία) που προβάλλονται από προηγούμενη αναζήτηση.
+
+                const formattedData = data.map((book, index) => { // Το data array γίνεται map σε ένα νέο array το formattedData.
+                    const formattedBook = {}; // Μετατρέπω κάθε data book object σε formattedData book object, που περιέχει μόνο τις ιδιότητες που ανήκουν απευθείας στο αντικείμενο book.
+                    for (const key in book) {
+                        if (book.hasOwnProperty(key)) {
+                            formattedBook[key] = book[key];
+                        }
+                    }
+                    return formattedBook;
+                });
+
+                const formattedString = JSON.stringify(formattedData, null, 2).replace(/},/g, '},\n'); // Μετατρέπω το formattedData σε formatted JSON string. Αυτό το regular expression χρησιμοποείται για την εισαγωγή νέας γραμμής μετά από κάθε κόμμα.
+                const formattedHTML = formattedString.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;'); // Αντικαθιστώ τα new line characters σε <br> tags και τα space characters με &nbsp για την διατήρηση της εσοχής στην HTML.
+                resultDiv.innerHTML = `<pre>${formattedHTML}</pre>`; // Εμφανίζει το μορφοποιημένο JSON στο HMTL document.
+            }
+        </script>
+    </body>
+</HMTL>
+<!--Url:https://stackoverflow.com/questions/3885817/how-do-i-check-that-a-number-is-float-or-integer. Από αυτό link πήρα βοήθεια σε ότι αφορά τα regex patterns παραπάνω για τον έλεγχο, αν μια τιμή είναι ή όχι integer ή float-->
+
+<!--Url:https://chat.openai.com/. Μέσω του chat gpt πήρα βοήθεια σε ότι αφορά την συνάρτηση display data για τον τρόπο εμφάνισης των δεδομένων(βιβλίων) στην σελίδα HTML με τον τρόπο με τον οποίο φαίνονται στην εκφώνηση-->
+
+<!-- Έχω παραθέσει το αρχείο της βάσης υπό το όνομα books.db ωστόσο σας παραθέτω και το query για την δημιουργία του πίνακα στην sqlite3 καθώς σε ότι αφορά το πεδίο του id δεν το δήλωσα όπως αναφέρετε στην εκφώνηση
+δηλαδή ως id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, καθώς μου έβγαζε error και το δήλωσα ως id INTEGER PRIMARY KEY όπου το PRIMARY KEY σημαίνει ότι έτσι και αλλιώς το πεδίο id θα είναι NOT NULL και παράλληλα 
+το AUTO_INCREMENT γίνεται αυτόματα δεν χρειάζεται να δηλωθεί, πιο συγκεκριμένα: CREATE TABLE books(id INTEGER PRIMARY KEY, author VARCHAR(25) NOT NULL, title VARCHAR(40) NOT NULL, genre VARCHAR(20) NOT NULL, price FLOAT NOT NULL);-->
+
+<!-- Στην βάση έχω 10 βιβλία, μπορείτε να δείτε τα βιβλία με την εντολή SELECT * FROM books; στο command promt του node.js. Έχω προσθέσει τα δύο βιβλία της εκφώνησης και άλλα 8 βιβλία. -->
